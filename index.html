@@ -411,7 +411,7 @@ S.customers.forEach(c=>c.rackets.forEach(r=>migrateRacket(r,S.models)));
 const receiptDate=o=>o.receiptAt||o.paidAt||o.doneAt||o.receivedAt;
 
 const cust=id=>S.customers.find(c=>c.id===id);
-const rack=(c,id)=>c?c.rackets.find(r=>r.id===id):null;
+const rack=(c,id)=>c&&Array.isArray(c.rackets)?c.rackets.find(r=>r.id===id)||null:null;
 const round05=n=>Math.round(n*20)/20;
 function calc(o){const items=(o.items||[]).reduce((a,i)=>a+num(i.price)*(num(i.qty)||1),0);const sub=num(o.labor)+num(o.stringPrice)+items;const d=o.discount||{};let disc=0;
   if(num(d.value)>0)disc=d.type==='abs'?Math.min(num(d.value),sub):round05(sub*Math.min(num(d.value),100)/100);return{items,sub,disc,total:Math.max(0,sub-disc)}}
