@@ -221,6 +221,8 @@ body.noapp .fab{display:none}
 .tr-report th{color:#5a6a61;border-bottom:1px solid #d6ded8}
 .tr-report td{border-bottom:1px solid #e3e9e5;padding:9px 8px;white-space:normal}
 .tr-report td.v{font-family:var(--f-display);font-size:1.15rem;font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.tr-report td.v,.tr-report td.d{white-space:nowrap}
+@media (max-width:480px){.tr-report{padding:14px}.tr-report td.v{font-size:1rem}.tr-report td{padding:8px 4px}}
 .tr-report td.d{text-align:right;font-weight:700;color:#1d5640;font-variant-numeric:tabular-nums}
 .tr-report .tr-foot{color:#5a6a61;font-size:.82rem;border-top:1px solid #d6ded8;padding-top:10px;white-space:pre-line}
 .tr-edit{display:grid;gap:8px}
@@ -906,8 +908,8 @@ function tuningReportHtml(o){const c=cust(o.customerId)||{},r=rack(c,o.racketId)
   return `<div class="tr-report">
   <div class="tr-head"><div><h2>Tuning-Report</h2><div style="color:#5a6a61">${esc(st.name||'BSS')}</div></div><div style="text-align:right"><b>Auftrag #${o.no}</b><br>${fmtD(o.doneAt||o.receivedAt)}</div></div>
   <dl class="tr-meta"><dt>Kunde</dt><dd>${esc(c.name||'')}</dd><dt>Schläger</dt><dd>${esc(racketLine(r))}</dd>${o.main?`<dt>Besaitung</dt><dd>${esc(o.cross&&o.cross!==o.main?o.main+' / '+o.cross:o.main)}${tensionTxt(o)?' · '+tensionTxt(o):''}</dd>`:''}</dl>
-  <table><thead><tr><th style="text-align:left">Wert</th><th style="text-align:right">Vorher</th><th style="text-align:right">Nachher</th><th style="text-align:right">Änderung</th></tr></thead>
-  <tbody>${rows.map(x=>`<tr><td>${x.d.l}</td><td class="v">${x.a?esc(fmtSpec(x.d,x.a)):'–'}</td><td class="v">${x.b?esc(fmtSpec(x.d,x.b)):'–'}</td><td class="d">${esc(x.diff)}</td></tr>`).join('')||'<tr><td colspan="4">Noch keine Werte erfasst.</td></tr>'}</tbody></table>
+  <div style="overflow-x:auto"><table><thead><tr><th style="text-align:left">Wert</th><th style="text-align:right">Vorher</th><th style="text-align:right">Nachher</th><th style="text-align:right">Änderung</th></tr></thead>
+  <tbody>${rows.map(x=>`<tr><td>${x.d.l}</td><td class="v">${x.a?esc(fmtSpec(x.d,x.a)):'–'}</td><td class="v">${x.b?esc(fmtSpec(x.d,x.b)):'–'}</td><td class="d">${esc(x.diff)}</td></tr>`).join('')||'<tr><td colspan="4">Noch keine Werte erfasst.</td></tr>'}</tbody></table></div>
   ${t.notes?`<div><div style="color:#5a6a61;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em">Massnahmen</div><div style="white-space:pre-line">${esc(t.notes)}</div></div>`:''}
   ${st.name||st.address?`<div class="tr-foot">${esc([st.name,st.address].filter(Boolean).join('\n'))}</div>`:''}</div>`}
 function tuningText(o){const c=cust(o.customerId)||{},r=rack(c,o.racketId),t=tuningOf(o),st=S.settings;
