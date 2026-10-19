@@ -1,0 +1,318 @@
+{
+ "strings": [
+  {
+   "gauge": "1.25",
+   "id": "dukpddj4",
+   "name": "Yonex Poly Tour Pro",
+   "price": 19,
+   "type": "Poly"
+  },
+  {
+   "gauge": "",
+   "id": "f26xjasz",
+   "name": "Multiful",
+   "price": 0,
+   "type": "Poly"
+  },
+  {
+   "gauge": "1.25",
+   "id": "p608scv7",
+   "name": "Solinco Hyper-G",
+   "price": 20,
+   "type": "Poly"
+  },
+  {
+   "gauge": "1.25",
+   "id": "q591msm4",
+   "name": "Babolat RPM Blast",
+   "price": 22,
+   "type": "Poly"
+  },
+  {
+   "gauge": "1.30",
+   "id": "tn7m7xfr",
+   "name": "Wilson NXT",
+   "price": 24,
+   "type": "Multifilament"
+  },
+  {
+   "gauge": "1.25",
+   "id": "ts6awqne",
+   "name": "Head Hawk Touch",
+   "price": 20,
+   "type": "Poly"
+  },
+  {
+   "gauge": "1.25",
+   "id": "u6llp7wx",
+   "name": "Luxilon ALU Power",
+   "price": 24,
+   "type": "Poly"
+  }
+ ],
+ "materials": [
+  {
+   "cat": "Ösen/Grommets",
+   "id": "21151648",
+   "name": "Grommet-Set (Ösenband)",
+   "price": 25
+  },
+  {
+   "cat": "Dämpfer",
+   "id": "nwaxbizw",
+   "name": "Dämpfer Standard",
+   "price": 3
+  },
+  {
+   "cat": "Overgrip",
+   "id": "t8n005il",
+   "name": "Wilson Pro Overgrip (3 Stk.)",
+   "price": 12
+  },
+  {
+   "cat": "Griffband",
+   "id": "uepuxdp6",
+   "name": "Babolat Syntec Pro Griffband",
+   "price": 16
+  },
+  {
+   "cat": "Overgrip",
+   "id": "xn8b1fd6",
+   "name": "Tourna Grip Original (1 Stk.)",
+   "price": 4.5
+  }
+ ],
+ "models": [
+  {
+   "brand": "Yonex",
+   "head": "97",
+   "id": "0b0sdkue",
+   "model": "Percept 97",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Wilson",
+   "head": "99",
+   "id": "0cus6icu",
+   "model": "Shift 99",
+   "pattern": "16x20"
+  },
+  {
+   "brand": "Babolat",
+   "head": "100",
+   "id": "0leo5xwa",
+   "model": "Pure Aero",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Head",
+   "head": "98",
+   "id": "1hp4tyab",
+   "model": "Radical MP",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Head",
+   "head": "100",
+   "id": "1jjg6j1x",
+   "model": "Speed MP",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Head",
+   "head": "100",
+   "id": "3s97lyga",
+   "model": "Speed Pro",
+   "pattern": "18x20"
+  },
+  {
+   "brand": "Babolat",
+   "head": "100",
+   "id": "44br8cbn",
+   "model": "Pure Drive",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Tecnifibre",
+   "head": "100",
+   "id": "5iz236gx",
+   "model": "Fire 300",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Tecnifibre",
+   "head": "98",
+   "id": "5wp95egb",
+   "model": "TFight 305",
+   "pattern": "18x19"
+  },
+  {
+   "brand": "Babolat",
+   "head": "98",
+   "id": "928ie55n",
+   "model": "Pure Aero 98",
+   "pattern": "16x20"
+  },
+  {
+   "brand": "Babolat",
+   "head": "97",
+   "id": "a71bzssr",
+   "model": "Pure Strike 97",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Yonex",
+   "head": "98",
+   "id": "a9zti0wg",
+   "model": "EZONE 98",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Yonex",
+   "head": "100",
+   "id": "cghfcfwl",
+   "model": "VCORE 100",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Wilson",
+   "head": "100",
+   "id": "dl1djkzo",
+   "model": "Clash 100",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Babolat",
+   "head": "98",
+   "id": "hnkr230p",
+   "model": "Pure Drive 98",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Head",
+   "head": "100",
+   "id": "itwk9lmj",
+   "model": "Extreme MP",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Dunlop",
+   "head": "100",
+   "id": "j1ktl6cw",
+   "model": "cx777",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Head",
+   "head": "100",
+   "id": "lw9nig3r",
+   "model": "Boom MP",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Wilson",
+   "head": "100",
+   "id": "p38j8qoq",
+   "model": "Blade 100 v9",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Wilson",
+   "head": "98",
+   "id": "pcsagjrh",
+   "model": "Blade 98 16x19 v9",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Head",
+   "head": "100",
+   "id": "qd4ohzen",
+   "model": "Gravity MP",
+   "pattern": "16x20"
+  },
+  {
+   "brand": "Prince",
+   "head": "100",
+   "id": "quu3apsv",
+   "model": "Tour 100",
+   "pattern": "16x18"
+  },
+  {
+   "brand": "Yonex",
+   "head": "100",
+   "id": "r4bes057",
+   "model": "EZONE 100",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Dunlop",
+   "head": "98",
+   "id": "rdeahzu8",
+   "model": "CX 200",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Wilson",
+   "head": "97",
+   "id": "s43rdp7m",
+   "model": "Pro Staff 97 v14",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Wilson",
+   "head": "100",
+   "id": "t1dyuocm",
+   "model": "Clash 100 v2",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Yonex",
+   "head": "98",
+   "id": "t9aqqojd",
+   "model": "VCORE 98",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Wilson",
+   "head": "100",
+   "id": "tjvxy3wh",
+   "model": "Ultra 100 v4",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Tecnifibre",
+   "head": "98",
+   "id": "u74u06bx",
+   "model": "TF40 305 16x19",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Babolat",
+   "head": "100",
+   "id": "vtf1ydpf",
+   "model": "Pure Strike 100",
+   "pattern": "16x19"
+  },
+  {
+   "brand": "Wilson",
+   "head": "98",
+   "id": "wkx4puq7",
+   "model": "Blade 98 v9",
+   "pattern": "18x20"
+  },
+  {
+   "brand": "Head",
+   "head": "99",
+   "id": "wsr5obp2",
+   "model": "Prestige MP",
+   "pattern": "18x19"
+  },
+  {
+   "brand": "Dunlop",
+   "head": "100",
+   "id": "x4fsr81t",
+   "model": "SX 300",
+   "pattern": "16x19"
+  }
+ ]
+}
