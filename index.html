@@ -210,6 +210,30 @@ body.noapp .fab{display:none}
 .ck-sum b{text-align:right}
 .ck-sum .tot{font-family:var(--f-display);font-size:1.5rem;font-weight:700;padding-top:6px;border-top:2px solid var(--ink)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:30;font-weight:500;max-width:calc(100% - 32px)}
+#print-root{display:none}
+.tr-report{background:#fff;color:#16211b;border:1px solid var(--line);border-radius:8px;padding:22px;display:grid;gap:16px;font-size:.95rem}
+.tr-report .tr-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;border-bottom:3px solid #1d5640;padding-bottom:12px}
+.tr-report h2{font-size:1.9rem;color:#1d5640;letter-spacing:.02em}
+.tr-report .tr-meta{display:grid;grid-template-columns:auto 1fr;gap:4px 14px}
+.tr-report .tr-meta dt{color:#5a6a61;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;align-self:center}
+.tr-report .tr-meta dd{margin:0;font-weight:600}
+.tr-report table{width:100%;border-collapse:collapse}
+.tr-report th{color:#5a6a61;border-bottom:1px solid #d6ded8}
+.tr-report td{border-bottom:1px solid #e3e9e5;padding:9px 8px;white-space:normal}
+.tr-report td.v{font-family:var(--f-display);font-size:1.15rem;font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.tr-report td.d{text-align:right;font-weight:700;color:#1d5640;font-variant-numeric:tabular-nums}
+.tr-report .tr-foot{color:#5a6a61;font-size:.82rem;border-top:1px solid #d6ded8;padding-top:10px;white-space:pre-line}
+.tr-edit{display:grid;gap:8px}
+.tr-edit .row3{display:grid;grid-template-columns:minmax(90px,1fr) 1fr 1fr;gap:8px;align-items:center}
+.tr-edit .row3 b{font-size:.85rem}
+@media print{
+  @page{margin:14mm}
+  body.printing>*:not(#print-root){display:none!important}
+  body.printing{background:#fff!important}
+  body.printing #print-root{display:block}
+  body.printing::before{display:none}
+  #print-root .tr-report{border:0;padding:0}
+}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}}}
 </style>
 </head>
@@ -434,6 +458,7 @@ function orderCard(o,showWho=true){
       ${nx?`<button class="btn sm ${nx[0]==='fertig'?'ball':'primary'}" data-act="advance" data-id="${o.id}">${nx[1]}</button>`:''}
       ${o.status==='fertig'?`<button class="btn sm" data-act="message" data-id="${o.id}">Kunde informieren</button>`:''}
       ${!o.paid?`<button class="btn sm" data-act="markPaid" data-id="${o.id}">Als bezahlt markieren</button>`:''}
+      ${isTuningOrder(o)?`<button class="btn sm" data-act="tuningReport" data-id="${o.id}">Tuning-Report</button>`:''}
       ${o.quick&&showWho?`<button class="btn sm" data-act="openCustomer" data-id="${c?c.id:''}">Details ergänzen</button>`:''}
       <button class="btn sm" data-act="checkout" data-id="${o.id}">Abrechnen &amp; Quittung</button>
       <button class="btn sm ghost" data-act="editOrder" data-id="${o.id}">Bearbeiten</button>
@@ -441,7 +466,7 @@ function orderCard(o,showWho=true){
 }
 function vOrders(){
   const o=S.orders, cnt=f=>o.filter(f).length;
-  const F={aktiv:[x=>x.status!=='abgeholt','Aktiv'],angenommen:[x=>x.status==='angenommen','Angenommen'],in_arbeit:[x=>x.status==='in_arbeit','In Arbeit'],fertig:[x=>x.status==='fertig','Abholbereit'],offen:[x=>!x.paid,'Unbezahlt'],quick:[x=>x.quick,'Nacherfassen'],abgeholt:[x=>x.status==='abgeholt','Abgeholt'],alle:[x=>true,'Alle']};
+  const F={aktiv:[x=>x.status!=='abgeholt','Aktiv'],angenommen:[x=>x.status==='angenommen','Angenommen'],in_arbeit:[x=>x.status==='in_arbeit','In Arbeit'],fertig:[x=>x.status==='fertig','Abholbereit'],offen:[x=>!x.paid,'Unbezahlt'],quick:[x=>x.quick,'Nacherfassen'],tuning:[x=>isTuningOrder(x),'Tuning'],abgeholt:[x=>x.status==='abgeholt','Abgeholt'],alle:[x=>true,'Alle']};
   const q=ui.q.trim().toLowerCase();
   let list=o.filter(F[ui.filter][0]).filter(x=>{if(!q)return true;const c=cust(x.customerId);return [c&&c.name,x.main,x.cross,racketName(rack(c,x.racketId)),'#'+x.no,String(x.no)].join(' ').toLowerCase().includes(q)});
   const order={fertig:0,in_arbeit:1,angenommen:2,abgeholt:3};
@@ -789,7 +814,7 @@ function wizSave(){const v=W.vals;let rdata=null;
   let r=null;if(rdata){if(v.r_sel==='__new'){r={id:uid(),...rdata,pref:{main:'',cross:'',tMain:'',tCross:'',prestretch:'0%',knots:'4',notes:''}};c.rackets.push(r)}else{r=rack(c,v.r_sel);Object.assign(r,rdata)}}
   const main=v.o_main.trim(),cross=(v.o_cross||'').trim();
   const data={customerId:c.id,racketId:r?r.id:'',main,cross:cross&&cross!==main?cross:'',tMain:v.o_tMain||'',tCross:v.o_tCross||v.o_tMain||'',prestretch:v.o_prestretch,knots:v.o_knots,receivedAt:v.o_receivedAt||today(),dueAt:v.o_dueAt||'',labor:num(v.o_labor),stringPrice:num(v.o_stringPrice),paid:!!v.o_paid,notes:v.o_notes||''};
-  const o={id:uid(),no:nextNo(),status:'angenommen',...data,items:[],discount:null,paidAt:data.paid?today():''};S.orders.push(o);
+  const o={id:uid(),no:nextNo(),status:'angenommen',...data,items:[],discount:null,paidAt:data.paid?today():''};if(r&&r.tuning&&r.tuning.wanted)o.tuning=snapTuning(r);S.orders.push(o);
   if(r&&v.o_savepref)r.pref={...r.pref,main:data.main,cross:data.cross,tMain:data.tMain,tCross:data.tCross,prestretch:data.prestretch,knots:data.knots};
   if(!S.strings.some(s=>s.name.toLowerCase()===main.toLowerCase()))S.strings.push({id:uid(),name:main,gauge:'',type:'Poly',price:data.cross?0:data.stringPrice});
   W=null;closeModal();ui.view='auftraege';ui.filter='aktiv';ui.q='';render();toast(`Auftrag #${o.no} erfasst`)}
@@ -860,6 +885,59 @@ function quickPanel(c,orders){const qs=orders.filter(o=>o.quick);if(!qs.length)r
   ${!c.phone&&!c.email?`<div><button class="btn sm" data-act="editCustomer" data-id="${c.id}">Kontaktdaten ergänzen</button></div>`:''}
   ${qs.map(o=>{const r=rack(c,o.racketId);return `<div class="quick-row"><div><b class="num">#${o.no}</b> · ${r?esc(racketName(r)):esc(o.racketNote||'Schläger unbekannt')} · ${esc(o.main)} ${tensionTxt(o)}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">${r?(r.incomplete?`<button class="btn sm primary" data-act="editRacket" data-id="${c.id}|${r.id}">Schläger vervollständigen</button>`:''):`<button class="btn sm primary" data-act="quickRacket" data-id="${c.id}|${o.id}">Schläger erfassen</button>`}<button class="btn sm" data-act="editOrder" data-id="${o.id}">Auftrag bearbeiten</button><button class="btn sm" data-act="quickDone" data-id="${o.id}">Vollständig</button></div></div>`}).join('')}</div>`}
+
+/* ---------- Tuning-Report ---------- */
+function snapTuning(r){const s=r.specs||{},t=r.tuning||{},before={},after={};TUNE.forEach(k=>{before[k]=s[k]||'';after[k]=t[k]||''});return{before,after,notes:t.notes||'',done:false}}
+function isTuningOrder(o){if(o.tuning)return true;const r=rack(cust(o.customerId),o.racketId);return !!(r&&r.tuning&&r.tuning.wanted&&o.status!=='abgeholt')}
+function tuningOf(o){if(o.tuning)return o.tuning;const r=rack(cust(o.customerId),o.racketId);return r?snapTuning(r):{before:{},after:{},notes:'',done:false}}
+function tuneDiff(d,a,b){if(!a||!b)return'';if(d.n){const x=num(b)-num(a);if(!x)return'±0';return(x>0?'+':'−')+Math.abs(x).toFixed(1)+' '+d.u}return a===b?'unverändert':''}
+function tuneRows(t){return TUNE.map(k=>{const d=specDef(k),a=t.before[k]||'',b=t.after[k]||'';return{d,a,b,diff:tuneDiff(d,a,b)}}).filter(x=>x.a||x.b)}
+function racketLine(r){if(!r)return'–';return [racketName(r),[r.pattern,r.head?r.head+' in²':''].filter(Boolean).join(', ')].filter(Boolean).join(' · ')}
+function tuningEdit(id){const o=S.orders.find(x=>x.id===id),c=cust(o.customerId)||{},r=rack(c,o.racketId),t=tuningOf(o);
+  openModal(`<form data-submit="saveTuning" data-id="${o.id}" style="display:grid;gap:14px"><div class="sheet-h"><h3>Tuning #${o.no} · ${esc(c.name||'')}</h3><button type="button" class="btn ghost sm" data-act="close">Schliessen</button></div>
+  <p class="hint" style="margin:0">${esc(racketLine(r))}. Trag die gemessenen Werte vor und nach dem Tuning ein.</p>
+  <div class="tr-edit"><div class="row3"><span></span><span class="hint">Vorher</span><span class="hint">Nachher</span></div>
+  ${TUNE.map(k=>{const d=specDef(k);const f=(pre,v)=>d.n?`<input id="tr-${pre}-${k}" name="${pre}_${k}" inputmode="decimal" value="${esc(fmt1(v))}" placeholder="${d.u}" data-fmt1>`:`<select id="tr-${pre}-${k}" name="${pre}_${k}"><option value="">–</option>${d.opts.map(x=>`<option ${x===v?'selected':''}>${esc(x)}</option>`).join('')}</select>`;
+    return `<div class="row3"><b>${d.l}${d.u?` <span class="hint">(${d.u})</span>`:''}</b>${f('b',t.before[k])}${f('a',t.after[k])}</div>`}).join('')}</div>
+  <label class="f"><span>Massnahmen</span><textarea id="tr-notes" name="notes" placeholder="z.B. 4 g Blei bei 3 und 9 Uhr, Griff mit Schrumpfschlauch aufgebaut">${esc(t.notes||'')}</textarea></label>
+  ${r?`<label class="check"><input id="tr-apply" type="checkbox" name="apply" ${t.done?'':'checked'}> Nachher-Werte als aktuelle Spezifikation des Schlägers speichern und Tuning abschliessen</label>`:''}
+  <div class="sheet-f"><button type="button" class="btn" data-act="close">Abbrechen</button><button class="btn primary">Speichern &amp; Report anzeigen</button></div></form>`)}
+function tuningReportHtml(o){const c=cust(o.customerId)||{},r=rack(c,o.racketId),t=tuningOf(o),st=S.settings,rows=tuneRows(t);
+  return `<div class="tr-report">
+  <div class="tr-head"><div><h2>Tuning-Report</h2><div style="color:#5a6a61">${esc(st.name||'BSS')}</div></div><div style="text-align:right"><b>Auftrag #${o.no}</b><br>${fmtD(o.doneAt||o.receivedAt)}</div></div>
+  <dl class="tr-meta"><dt>Kunde</dt><dd>${esc(c.name||'')}</dd><dt>Schläger</dt><dd>${esc(racketLine(r))}</dd>${o.main?`<dt>Besaitung</dt><dd>${esc(o.cross&&o.cross!==o.main?o.main+' / '+o.cross:o.main)}${tensionTxt(o)?' · '+tensionTxt(o):''}</dd>`:''}</dl>
+  <table><thead><tr><th style="text-align:left">Wert</th><th style="text-align:right">Vorher</th><th style="text-align:right">Nachher</th><th style="text-align:right">Änderung</th></tr></thead>
+  <tbody>${rows.map(x=>`<tr><td>${x.d.l}</td><td class="v">${x.a?esc(fmtSpec(x.d,x.a)):'–'}</td><td class="v">${x.b?esc(fmtSpec(x.d,x.b)):'–'}</td><td class="d">${esc(x.diff)}</td></tr>`).join('')||'<tr><td colspan="4">Noch keine Werte erfasst.</td></tr>'}</tbody></table>
+  ${t.notes?`<div><div style="color:#5a6a61;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em">Massnahmen</div><div style="white-space:pre-line">${esc(t.notes)}</div></div>`:''}
+  ${st.name||st.address?`<div class="tr-foot">${esc([st.name,st.address].filter(Boolean).join('\n'))}</div>`:''}</div>`}
+function tuningText(o){const c=cust(o.customerId)||{},r=rack(c,o.racketId),t=tuningOf(o),st=S.settings;
+  return [`*Tuning-Report*${st.name?' – '+st.name:''}`,`Kunde: ${c.name||''}`,`Schläger: ${racketLine(r)}`,`Auftrag #${o.no} vom ${fmtD(o.doneAt||o.receivedAt)}`,'',
+    ...tuneRows(t).map(x=>`${x.d.l}: ${x.a?fmtSpec(x.d,x.a):'–'} → ${x.b?fmtSpec(x.d,x.b):'–'}${x.diff?' ('+x.diff+')':''}`),
+    ...(t.notes?['',`Massnahmen: ${t.notes}`]:[])].join('\n')}
+function tuningView(id){const o=S.orders.find(x=>x.id===id),c=cust(o.customerId)||{},txt=tuningText(o),wa=waLink(c.phone,txt);
+  openModal(`<div class="sheet-h"><h3>Tuning-Report #${o.no}</h3><button class="btn ghost sm" data-act="close">Schliessen</button></div>
+  ${tuningReportHtml(o)}
+  <div class="sheet-f"><button class="btn left" data-act="tuningEdit" data-id="${o.id}">Werte bearbeiten</button><button class="btn" data-act="tuningPrint" data-id="${o.id}">Drucken</button><button class="btn" data-act="tuningPdf" data-id="${o.id}">PDF teilen</button>${wa?`<a class="btn primary" href="${esc(wa)}" target="_blank" rel="noopener">Per WhatsApp senden</a>`:`<button class="btn primary" data-act="tuningCopy" data-id="${o.id}">Text kopieren</button>`}</div>
+  ${wa?'':'<p class="hint" style="margin:0">Beim Kunden ist keine Telefonnummer hinterlegt. Kopiere den Text und füge ihn in WhatsApp ein.</p>'}`)}
+function tuningPrint(id){const o=S.orders.find(x=>x.id===id);const pr=$('#print-root');pr.innerHTML=tuningReportHtml(o);document.body.classList.add('printing');
+  const done=()=>{document.body.classList.remove('printing');pr.innerHTML='';window.removeEventListener('afterprint',done)};window.addEventListener('afterprint',done);setTimeout(()=>window.print(),50)}
+async function tuningPdf(id,btn){const o=S.orders.find(x=>x.id===id),c=cust(o.customerId)||{},r=rack(c,o.racketId),t=tuningOf(o),st=S.settings;btn.disabled=true;
+  try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+    const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),W=doc.internal.pageSize.getWidth(),clean=v=>String(v).replace(/[−–]/g,'-').replace(/→/g,'>').replace(/·/g,'|').replace(/²/g,'2');
+    doc.setFont('helvetica','bold');doc.setFontSize(22);doc.setTextColor(29,86,64);doc.text('Tuning-Report',14,22);
+    doc.setFontSize(11);doc.setTextColor(20);doc.text(clean(`Auftrag #${o.no}`),W-14,18,{align:'right'});doc.setFont('helvetica','normal');doc.text(fmtD(o.doneAt||o.receivedAt),W-14,24,{align:'right'});
+    if(st.name){doc.setTextColor(90);doc.text(clean(st.name),14,29)}
+    doc.setDrawColor(29,86,64);doc.setLineWidth(.8);doc.line(14,33,W-14,33);doc.setTextColor(20);
+    const meta=[['Kunde',c.name||''],['Schläger',racketLine(r)]];if(o.main)meta.push(['Besaitung',(o.cross&&o.cross!==o.main?o.main+' / '+o.cross:o.main)+(tensionTxt(o)?' | '+tensionTxt(o):'')]);
+    doc.autoTable({startY:38,body:meta.map(m=>m.map(clean)),theme:'plain',styles:{fontSize:11,cellPadding:1.5},columnStyles:{0:{textColor:110,cellWidth:30},1:{fontStyle:'bold'}}});
+    doc.autoTable({startY:doc.lastAutoTable.finalY+6,head:[['Wert','Vorher','Nachher','Änderung']],body:tuneRows(t).map(x=>[x.d.l,x.a?fmtSpec(x.d,x.a):'-',x.b?fmtSpec(x.d,x.b):'-',x.diff].map(clean)),
+      styles:{fontSize:11,cellPadding:3},headStyles:{fillColor:[29,86,64],textColor:255},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right',fontStyle:'bold'}}});
+    let y=doc.lastAutoTable.finalY+10;if(t.notes){doc.setFontSize(9);doc.setTextColor(110);doc.text('MASSNAHMEN',14,y);doc.setFontSize(11);doc.setTextColor(20);doc.text(doc.splitTextToSize(clean(t.notes),W-28),14,y+6)}
+    if(st.name||st.address){doc.setFontSize(9);doc.setTextColor(110);doc.text(clean([st.name,st.address].filter(Boolean).join('\n')),14,doc.internal.pageSize.getHeight()-22)}
+    const fname=`Tuning-Report_${o.no}_${(c.name||'Kunde').replace(/[^\wäöüÄÖÜ-]+/g,'_')}.pdf`,blob=doc.output('blob'),file=new File([blob],fname,{type:'application/pdf'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'Tuning-Report'})}catch(e){}}
+    else{await DL.save({filename:fname,data:blob});toast('PDF gespeichert')}
+  }catch(e){toast('PDF konnte nicht erstellt werden.')}btn.disabled=false}
 
 /* ---------- Formulare ---------- */
 function customerForm(c){const n=!c;c=c||{name:'',phone:'',email:'',address:'',notes:''};
@@ -969,6 +1047,11 @@ const A={
   close(){closeModal()},
   confirmYes(){const f=pendingYes;pendingYes=null;closeModal();f&&f()},
   newOrder(){wizStart({})},
+  tuningReport(id){const o=S.orders.find(x=>x.id===id);const t=tuningOf(o);if(!o.tuning||!tuneRows(t).length)tuningEdit(id);else tuningView(id)},
+  tuningEdit(id){tuningEdit(id)},
+  tuningPrint(id){tuningPrint(id)},
+  tuningPdf(id,b){tuningPdf(id,b)},
+  tuningCopy(id){const o=S.orders.find(x=>x.id===id);copy(tuningText(o))},
   logout(){confirmBox('Auf diesem Gerät abmelden? Deine Daten bleiben online gespeichert.','Abmelden',()=>{sb.auth.signOut()})},
   quickOrder(){quickStart()},
   qPick(id){qRead();Q.cid=id;Q.newMode=false;const c=cust(id);Q.rsel=c&&c.rackets.length?c.rackets[0].id:'';qApplyRacket();drawQuick()},
@@ -1067,7 +1150,7 @@ const SUBMIT={
     if(!d.main){toast('Bitte die Längssaite angeben');$('#o-main').focus();return}
     const data={customerId:d.customerId,racketId:d.racketId,main:d.main,cross:d.cross&&d.cross!==d.main?d.cross:'',tMain:d.tMain,tCross:d.tCross||d.tMain,prestretch:d.prestretch,knots:d.knots,receivedAt:d.receivedAt,dueAt:d.dueAt,labor:num(d.labor),stringPrice:num(d.stringPrice),paid:!!f.querySelector('#o-paid').checked,notes:d.notes};
     let o;if(id){o=S.orders.find(x=>x.id===id);if(d.status)data.status=d.status;if(data.paid&&!o.paid)data.paidAt=today();Object.assign(o,data)}
-    else{o={id:uid(),no:nextNo(),status:'angenommen',...data,items:[],discount:null,paidAt:data.paid?today():''};S.orders.push(o)}
+    else{o={id:uid(),no:nextNo(),status:'angenommen',...data,items:[],discount:null,paidAt:data.paid?today():''};const rr=rack(cust(o.customerId),o.racketId);if(rr&&rr.tuning&&rr.tuning.wanted)o.tuning=snapTuning(rr);S.orders.push(o)}
     if(d.racketId&&f.querySelector('#o-savepref')?.checked){const r=rack(cust(d.customerId),d.racketId);if(r)r.pref={...r.pref,main:data.main,cross:data.cross,tMain:data.tMain,tCross:data.tCross,prestretch:data.prestretch,knots:data.knots}}
     if(!S.strings.some(s=>s.name.toLowerCase()===data.main.toLowerCase()))S.strings.push({id:uid(),name:data.main,gauge:'',type:'Poly',price:data.cross?0:data.stringPrice});
     closeModal();render();toast(id?'Auftrag gespeichert':`Auftrag #${o.no} erfasst`)},
@@ -1076,6 +1159,13 @@ const SUBMIT={
     if(id){Object.assign(S.models.find(m=>m.id===id),v);S.customers.forEach(c=>c.rackets.forEach(r=>{if(r.modelId===id)Object.assign(r,v)}))}else S.models.push({id:uid(),...v});
     ui.mb=v.brand;closeModal();render();toast('Modell gespeichert')},
   wizSubmit(){wizRead();wizNext()},
+  saveTuning(f){const d=fd(f),o=S.orders.find(x=>x.id===f.dataset.id),before={},after={};
+    TUNE.forEach(k=>{const n=specDef(k).n;before[k]=n?fmt1(d['b_'+k]):(d['b_'+k]||'');after[k]=n?fmt1(d['a_'+k]):(d['a_'+k]||'')});
+    const apply=!!(f.querySelector('#tr-apply')&&f.querySelector('#tr-apply').checked);
+    o.tuning={before,after,notes:d.notes||'',done:apply||!!(o.tuning&&o.tuning.done)};
+    const r=rack(cust(o.customerId),o.racketId);
+    if(r&&apply){r.specs={...(r.specs||{})};TUNE.forEach(k=>{if(after[k])r.specs[k]=after[k]});r.tuning={wanted:false,weight:'',balance:'',sw:'',grip:'',notes:''}}
+    render();tuningView(o.id)},
   async login(f){const d=fd(f);loginErr='';const b=f.querySelector('button');b.disabled=true;b.textContent='Anmelden…';
     const{data,error}=await sb.auth.signInWithPassword({email:d.email,password:d.password});
     if(error){loginErr=/invalid/i.test(error.message)?'E-Mail oder Passwort stimmt nicht.':'Anmeldung fehlgeschlagen: '+error.message;render();return}
@@ -1121,5 +1211,6 @@ render();
 initSupa();
 </script>
 
+<div id="print-root"></div>
 </body>
 </html>
