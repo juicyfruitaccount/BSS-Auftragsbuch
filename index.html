@@ -194,6 +194,16 @@ body.noapp .fab{display:none}
 .sync.ok::before{background:#6fd39b}.sync.busy::before{background:var(--ball)}.sync.err{color:#ffb4ad}.sync.err::before{background:#f08a82}.sync.local::before{background:#9aa59f}
 .brand{flex-wrap:wrap}
 @media (max-width:480px){.brand small{display:none}}
+tr.prow{cursor:pointer}
+tr.prow:hover td{background:var(--surface-2)}
+table.kb tr.kb-out td:nth-child(5),table.kb tr.kb-out td:nth-child(6){color:var(--danger)}
+td.wrap{white-space:normal;min-width:120px}
+.show-s{display:none}
+.show-cell{display:none}
+@media (max-width:600px){.hide-s{display:none}.show-s{display:block}.show-cell{display:table-cell}td.wrap{min-width:0;hyphens:auto;overflow-wrap:anywhere}.tablewrap td,.tablewrap th{padding-left:5px;padding-right:5px}table.kb td,table.kb th{padding:7px 5px}}
+.kpi b{white-space:nowrap}
+@media (max-width:480px){.kpi b{font-size:1.3rem}}
+table.kb tr.kb-start td{color:var(--muted);font-style:italic}
 .ck-lines{display:grid;border-top:1px solid var(--line)}
 .ck-line{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);min-width:0}
 .ck-line .grow{flex:1;min-width:0}
@@ -249,6 +259,7 @@ body.noapp .fab{display:none}
   <nav class="tabs" aria-label="Bereiche">
     <button data-act="go" data-id="auftraege">Aufträge</button>
     <button data-act="go" data-id="kunden">Kunden</button>
+    <button data-act="go" data-id="einkauf">Einkauf</button>
     <button data-act="go" data-id="saiten">Stammdaten</button>
     <button data-act="go" data-id="umsatz">Umsatz</button>
     <button data-act="go" data-id="reports">Reports</button>
@@ -280,7 +291,7 @@ const MONTHS=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov'
 
 /* ---------- Daten ---------- */
 let S, ui={view:'auftraege',filter:'aktiv',q:'',cq:'',customer:null,year:new Date().getFullYear()};
-function blank(){return{settings:{name:'',address:'',labor:25,msg:'Hallo {vorname}, dein {schlaeger} ist frisch besaitet und kann abgeholt werden. Betrag: {betrag}. Liebe Grüsse'},strings:[],materials:[],models:seedModels(),customers:[],orders:[],nextNo:1,sample:false}}
+function blank(){return{settings:{name:'',address:'',labor:25,msg:'Hallo {vorname}, dein {schlaeger} ist frisch besaitet und kann abgeholt werden. Betrag: {betrag}. Liebe Grüsse'},strings:[],materials:[],models:seedModels(),customers:[],orders:[],purchases:[],nextNo:1,sample:false}}
 function seedModels(){const L={
   Babolat:[['Pure Aero 98','16x20','98'],['Pure Aero','16x19','100'],['Pure Drive','16x19','100'],['Pure Drive 98','16x19','98'],['Pure Strike 97','16x19','97'],['Pure Strike 100','16x19','100']],
   Wilson:[['Blade 98 v9','18x20','98'],['Blade 98 16x19 v9','16x19','98'],['Blade 100 v9','16x19','100'],['Pro Staff 97 v14','16x19','97'],['Clash 100','16x19','100'],['Clash 100 v2','16x19','100'],['Ultra 100 v4','16x19','100'],['Shift 99','16x20','99']],
@@ -341,7 +352,7 @@ function nextNo(){const m=S.orders.reduce((a,o)=>Math.max(a,o.no||0),0);S.nextNo
 const SUPA_URL='https://hhwvyyshrcodggslzjbj.supabase.co';
 const SUPA_KEY='sb_publishable_j4WIEkBz2oFZ5kkUig_PhA_fFhL4en5';
 function stable(v){if(Array.isArray(v))return '['+v.map(x=>x===undefined?'null':stable(x)).join(',')+']';if(v&&typeof v==='object')return '{'+Object.keys(v).filter(k=>v[k]!==undefined).sort().map(k=>JSON.stringify(k)+':'+stable(v[k])).join(',')+'}';return JSON.stringify(v)}
-const COLS=['customers','orders','strings','materials','models'];
+const COLS=['customers','orders','strings','materials','models','purchases'];
 let sb=null,DB=null,uidOwner=null,userEmail='',dbState='connecting',ready=false,synced={},syncTimer=null,flushing=false,again=false,chan=null,loginErr='';
 function setSync(st){dbState=st;const el=$('#sync');if(!el)return;
   const M={ok:['Synchronisiert','ok'],saving:['Speichert…','busy'],error:['Keine Verbindung – wird erneut versucht','err'],connecting:['Verbinde…','busy'],login:['Nicht angemeldet','local']};
@@ -442,7 +453,7 @@ function render(){
   document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-current',(b.dataset.id===ui.view||(ui.view==='kunde'&&b.dataset.id==='kunden'))?'page':'false'));
   const m=$('#main');
   const banner=S.sample?`<div class="banner"><span>Du siehst Beispieldaten zum Ausprobieren.</span><button class="btn sm" data-act="clearSample">Beispieldaten löschen und neu starten</button></div>`:'';
-  m.innerHTML=banner+({auftraege:vOrders,kunden:vCustomers,kunde:vCustomer,saiten:vStrings,umsatz:vRevenue,reports:vReports,einstellungen:vSettings}[ui.view]||vOrders)();
+  m.innerHTML=banner+({auftraege:vOrders,kunden:vCustomers,kunde:vCustomer,saiten:vStrings,einkauf:vPurchases,umsatz:vRevenue,reports:vReports,einstellungen:vSettings}[ui.view]||vOrders)();
   save();
 }
 function orderCard(o,showWho=true){
@@ -564,6 +575,80 @@ function vSettings(){
   <div class="panel"><h3>Konto</h3><p class="hint" style="margin:0">Angemeldet als <b>${esc(userEmail)}</b></p><div><button class="btn" data-act="logout">Abmelden</button></div></div>`;
 }
 
+/* ---------- Einkauf (Materialeinkauf mit MWST) ---------- */
+const VAT_RATES=[[8.1,'8.1 % Normalsatz'],[2.6,'2.6 % reduzierter Satz'],[3.8,'3.8 % Beherbergung'],[0,'0 % ohne MWST']];
+const PCATS=['Saiten','Griffbänder / Overgrips','Zubehör','Werkzeug / Maschine','Porto / Versand','Büro','Sonstiges'];
+const r2=n=>Math.round(n*100)/100;
+function vatOf(totalAmt,rate){const t=num(totalAmt),r=num(rate);if(!t||!r)return 0;return r2(t*r/(100+r))}
+function pCalc(p){const t=num(p.total),vat=vatOf(t,p.rate);return{total:t,vat,net:r2(t-vat)}}
+const dShort=x=>{const d=fmtD(x);return d==='–'?d:d.slice(0,6)+'<span class="hide-s">'+d.slice(6)+'</span>'};
+const rateTxt=r=>(num(r)?String(num(r)):'0')+' %';
+function nextPurchaseNo(){return (S.purchases||[]).reduce((a,p)=>Math.max(a,p.no||0),0)+1}
+function lastRate(){const l=[...(S.purchases||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.no-a.no)[0];return l?num(l.rate):8.1}
+ui.pq='';ui.pyear=new Date().getFullYear();
+function vatHtml(t,rate){const c=pCalc({total:t,rate});return `<div class="ck-sum"><span>Total inkl. MWST</span><b class="num">${money(c.total)}</b>
+  <span>davon MWST ${esc(rateTxt(rate))}</span><b class="num">${money(c.vat)}</b><span>Netto</span><b class="num">${money(c.net)}</b></div>`}
+function vPurchases(){
+  const P=S.purchases||[],cy=new Date().getFullYear();
+  const years=[...new Set(P.map(p=>+String(p.date).slice(0,4)).filter(Boolean).concat(cy))].sort((a,b)=>b-a);
+  const ofYear=P.filter(p=>+String(p.date).slice(0,4)===ui.pyear);
+  const q=ui.pq.trim().toLowerCase();
+  const list=ofYear.filter(p=>!q||[p.text,p.supplier,p.cat,p.ref,'E-'+p.no].join(' ').toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date)||b.no-a.no);
+  const sum=ofYear.reduce((a,p)=>{const c=pCalc(p);a.t+=c.total;a.v+=c.vat;a.n+=c.net;return a},{t:0,v:0,n:0});
+  let lastM='';
+  const rowsHtml=list.map(p=>{const c=pCalc(p),m=p.date.slice(0,7);const head=m!==lastM?`<tr class="grp"><td colspan="3">${MONTHS[+m.slice(5,7)-1]} ${m.slice(0,4)}</td></tr>`:'';lastM=m;
+    return head+`<tr class="prow" data-act="editPurchase" data-id="${p.id}"><td class="num">${dShort(p.date)}<div class="hint num">E-${p.no}</div></td><td class="wrap"><b>${esc(p.text)}</b><div class="hint">${esc([p.supplier,p.cat].filter(Boolean).join(' · '))}</div></td><td class="r num"><b>${money(c.total).slice(4)}</b><div class="hint">MWST ${money(c.vat).slice(4)}</div><div class="hint">${esc(rateTxt(p.rate))}</div></td></tr>`}).join('');
+  return `<div class="bar"><h2>Einkauf</h2><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><select id="pyear" data-change="pYear" style="width:auto" aria-label="Jahr">${years.map(y=>`<option ${y===ui.pyear?'selected':''}>${y}</option>`).join('')}</select><button class="btn primary" data-act="newPurchase">+ Einkauf erfassen</button></div></div>
+  <div class="kpis"><div class="kpi"><span>Ausgaben ${ui.pyear}</span><b>${money(sum.t)}</b></div><div class="kpi"><span>davon MWST</span><b>${money(sum.v)}</b></div><div class="kpi"><span>Netto</span><b>${money(sum.n)}</b></div><div class="kpi"><span>Belege</span><b>${ofYear.length}</b></div></div>
+  <input id="pq" type="search" placeholder="Suchen: Beschreibung, Lieferant, Kategorie, Beleg" value="${esc(ui.pq)}" data-input="pq">
+  <div class="panel">${list.length?`<div class="tablewrap"><table><thead><tr><th>Datum</th><th>Beschreibung</th><th class="r">Total CHF</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`
+    :`<div class="empty">${P.length&&!ofYear.length?'Keine Einkäufe in diesem Jahr.':q?'Nichts gefunden.':'Noch keine Einkäufe erfasst.'}<br><br><button class="btn primary" data-act="newPurchase">Ersten Einkauf erfassen</button></div>`}</div>
+  <p class="hint">Erfasse den Totalbetrag inklusive MWST, so wie er auf der Quittung des Lieferanten steht. Die MWST wird daraus berechnet. Alle Einkäufe erscheinen als Ausgaben im Kassabuch unter Reports.</p>`}
+function purchaseForm(p,prefill){const n=!p||!!prefill;p=p||{date:today(),supplier:'',text:'',cat:'',total:'',rate:lastRate(),ref:'',notes:''};
+  const sups=[...new Set((S.purchases||[]).map(x=>x.supplier).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
+  const cats=[...new Set([...PCATS,...(S.purchases||[]).map(x=>x.cat).filter(Boolean)])];
+  const rates=VAT_RATES.some(([r])=>r===num(p.rate))?VAT_RATES:[...VAT_RATES,[num(p.rate),rateTxt(p.rate)]];
+  openModal(`<form data-submit="savePurchase" data-id="${n?'':p.id}" style="display:grid;gap:14px"><div class="sheet-h"><h3>${n?'Einkauf erfassen':'Einkauf E-'+p.no}</h3><button type="button" class="btn ghost sm" data-act="close">Schliessen</button></div>
+  <div class="grid2"><label class="f"><span>Datum *</span><input id="pu-date" name="date" type="date" required value="${esc(p.date)}"></label><label class="f"><span>Lieferant</span><input id="pu-supplier" name="supplier" list="suppliers" value="${esc(p.supplier)}" autocomplete="off" placeholder="z.B. Tennis-Point"></label></div>
+  <label class="f"><span>Beschreibung *</span><input id="pu-text" name="text" value="${esc(p.text)}" placeholder="z.B. 2 Rollen Babolat RPM Blast 200 m"></label>
+  <div class="grid2"><label class="f"><span>Kategorie</span><input id="pu-cat" name="cat" list="pcats" value="${esc(p.cat)}" autocomplete="off"></label><label class="f"><span>Beleg-Nr. Lieferant</span><input id="pu-ref" name="ref" value="${esc(p.ref)}" placeholder="optional"></label></div>
+  <div class="grid2"><label class="f"><span>Total inkl. MWST (CHF) *</span><input id="pu-total" name="total" inputmode="decimal" value="${esc(p.total)}" data-input="pvat" class="big"></label>
+    <label class="f"><span>MWST-Satz</span><select id="pu-rate" name="rate" data-change="pvat" class="big">${rates.map(([r,l])=>`<option value="${r}" ${r===num(p.rate)?'selected':''}>${esc(l)}</option>`).join('')}</select></label></div>
+  <div id="pu-vat">${vatHtml(p.total,p.rate)}</div>
+  <label class="f"><span>Notiz</span><input id="pu-notes" name="notes" value="${esc(p.notes||'')}"></label>
+  <datalist id="suppliers">${sups.map(x=>`<option value="${esc(x)}">`).join('')}</datalist><datalist id="pcats">${cats.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+  <div class="sheet-f">${n?'':`<button type="button" class="btn danger left" data-act="delPurchase" data-id="${p.id}">Löschen</button>`}<button type="button" class="btn" data-act="close">Abbrechen</button>${n?'<button class="btn" name="more" value="1">Speichern &amp; weiterer Beleg</button>':''}<button class="btn primary">Speichern</button></div></form>`)}
+
+/* ---------- Kassabuch ---------- */
+function kbIncomeDate(o){return o.paidAt||receiptDate(o)}
+function kbRows(){const r=ui.rep,inP=d=>!!d&&(!r.from||d>=r.from)&&(!r.to||d<=r.to);
+  const inc=S.orders.filter(o=>o.paid&&inP(kbIncomeDate(o))).map(o=>{const c=cust(o.customerId)||{};
+    return{id:'o-'+o.id,date:kbIncomeDate(o),ref:'Q-'+o.no,no:o.no,text:`Quittung Nr. ${o.no} · ${c.name||'Kunde'}`,cat:'Einnahmen Besaitung',in:total(o),out:0,rate:'',vat:0,kind:'in'}});
+  const out=(S.purchases||[]).filter(p=>inP(p.date)).map(p=>{const c=pCalc(p);
+    return{id:'p-'+p.id,date:p.date,ref:'E-'+p.no,no:p.no,text:[p.supplier,p.text].filter(Boolean).join(' · '),cat:p.cat||'Einkauf',in:0,out:c.total,rate:rateTxt(p.rate),vat:c.vat,kind:'out'}});
+  return [...inc,...out].sort((a,b)=>a.date.localeCompare(b.date)||(a.kind!==b.kind?(a.kind==='in'?-1:1):a.no-b.no))}
+function kbSums(rows){const start=num(ui.rep.kbStart);const i=r2(rows.reduce((a,x)=>a+x.in,0)),o=r2(rows.reduce((a,x)=>a+x.out,0)),v=r2(rows.reduce((a,x)=>a+x.vat,0));return{start,in:i,out:o,vat:v,result:r2(i-o),end:r2(start+i-o)}}
+const KBCOLS=[{k:'date',l:'Datum'},{k:'ref',l:'Beleg'},{k:'text',l:'Text'},{k:'cat',l:'Kategorie'},{k:'in',l:'Einnahmen CHF',m:1},{k:'out',l:'Ausgaben CHF',m:1},{k:'rate',l:'MWST-Satz'},{k:'vat',l:'MWST CHF',m:1},{k:'saldo',l:'Saldo CHF',m:1}];
+function kbMatrix(){const rows=kbRows(),s=kbSums(rows);let saldo=s.start;
+  const body=[[fmtD(ui.rep.from),'','Anfangsbestand','','','','','',r2(saldo)]].concat(rows.map(x=>{saldo=r2(saldo+x.in-x.out);return[fmtD(x.date),x.ref,x.text,x.cat,x.in?r2(x.in):'',x.out?r2(x.out):'',x.rate,x.vat?r2(x.vat):'',saldo]}));
+  const foot=['Total','','','',s.in,s.out,'',s.vat,s.end];
+  const summary=[['Anfangsbestand',s.start],['Total Einnahmen',s.in],['Total Ausgaben',s.out],['Ergebnis (Einnahmen − Ausgaben)',s.result],['Endbestand',s.end],['Bezahlte MWST in den Ausgaben (Vorsteuer)',s.vat]];
+  return{cols:KBCOLS,head:KBCOLS.map(c=>c.l),body,foot,rows,summary,title:'Kassabuch',sheet:'Kassabuch',file:'Kassabuch',countTxt:`${rows.length} Buchungen`,landscape:true}}
+function reportData(){if(ui.rep.kind==='kassabuch')return kbMatrix();const m=repMatrix();return{...m,summary:[],title:'Report Quittungen',sheet:'Quittungen',file:'Report',countTxt:`${m.rows.length} Quittungen`,landscape:m.cols.length>7}}
+function vKassabuch(){const r=ui.rep,rows=kbRows(),s=kbSums(rows),open=S.orders.filter(o=>!o.paid);let saldo=s.start;
+  return `<div class="kpis"><div class="kpi"><span>Einnahmen</span><b>${money(s.in)}</b></div><div class="kpi"><span>Ausgaben</span><b>${money(s.out)}</b></div><div class="kpi"><span>Ergebnis</span><b style="color:${s.result<0?'var(--danger)':'inherit'}">${money(s.result)}</b></div><div class="kpi"><span>MWST in Ausgaben</span><b>${money(s.vat)}</b></div></div>
+  <div class="panel">
+    <div class="bar"><h3>Kassabuch ${periodTxt()}</h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn primary" data-act="repXlsx" ${rows.length?'':'disabled'}>Excel herunterladen</button><button class="btn" data-act="repPdf" ${rows.length?'':'disabled'}>PDF zum Drucken</button><button class="btn" data-act="repCopy" ${rows.length?'':'disabled'}>Tabelle kopieren</button></div></div>
+    <label class="f" style="max-width:260px"><span>Anfangsbestand Kasse (CHF)</span><input id="kb-start" inputmode="decimal" value="${esc(r.kbStart||'')}" placeholder="0.00" data-change="kbStart"></label>
+    ${rows.length?`<div class="tablewrap"><table class="rep kb"><thead><tr><th>Datum</th><th class="hide-s">Beleg</th><th>Text</th><th class="r hide-s">Einnahmen</th><th class="r hide-s">Ausgaben</th><th class="r show-cell">Betrag</th><th class="r hide-s">MWST</th><th class="r">Saldo</th></tr></thead><tbody>
+      <tr class="kb-start"><td class="num">${dShort(r.from)}</td><td class="hide-s"></td><td class="wrap">Anfangsbestand</td><td class="hide-s"></td><td class="hide-s"></td><td class="show-cell"></td><td class="hide-s"></td><td class="r num">${money(saldo).slice(4)}</td></tr>
+      ${rows.map(x=>{saldo=r2(saldo+x.in-x.out);return `<tr class="kb-${x.kind}"><td class="num">${dShort(x.date)}<div class="hint show-s">${esc(x.ref)}</div></td><td class="num hide-s">${esc(x.ref)}</td><td class="wrap">${esc(x.text)}<div class="hint">${esc(x.cat)}</div></td><td class="r num hide-s">${x.in?money(x.in).slice(4):''}</td><td class="r num hide-s">${x.out?money(x.out).slice(4):''}</td><td class="r num show-cell">${x.in?'+'+money(x.in).slice(4):'−'+money(x.out).slice(4)}</td><td class="r num hide-s">${x.vat?money(x.vat).slice(4)+`<div class="hint">${esc(x.rate)}</div>`:''}</td><td class="r num">${money(saldo).slice(4)}</td></tr>`}).join('')}</tbody>
+      <tfoot><tr><td>Total CHF</td><td class="hide-s"></td><td></td><td class="r num hide-s">${money(s.in).slice(4)}</td><td class="r num hide-s">${money(s.out).slice(4)}</td><td class="r num show-cell">${s.result<0?'−':'+'}${money(Math.abs(s.result)).slice(4)}</td><td class="r num hide-s">${money(s.vat).slice(4)}</td><td class="r num">${money(s.end).slice(4)}</td></tr></tfoot></table></div>`
+    :`<div class="empty">Keine Einnahmen oder Ausgaben in diesem Zeitraum.</div>`}
+    <p class="hint" style="margin:0">Einnahmen sind die bezahlten Aufträge, gebucht am Zahlungsdatum. ${open.length?`Noch nicht bezahlte Aufträge (${open.length}, ${money(open.reduce((a,o)=>a+total(o),0))}) sind nicht enthalten. `:''}Ausgaben sind die Einkäufe aus dem Tab «Einkauf».</p>
+  </div>`}
+
 /* ---------- Reports ---------- */
 const itemsTxt=o=>(o.items||[]).map(i=>`${(num(i.qty)||1)>1?num(i.qty)+'× ':''}${i.name}`).join(', ');
 const REPCOLS=[
@@ -591,7 +676,7 @@ const PERIODS={
   year:['Dieses Jahr',()=>{const y=new Date().getFullYear();return[y+'-01-01',y+'-12-31']}],
   lastYear:['Letztes Jahr',()=>{const y=new Date().getFullYear()-1;return[y+'-01-01',y+'-12-31']}]
 };
-ui.rep={from:monthRange(0)[0],to:monthRange(0)[1],only:true,pay:'alle',cols:['date','no','cust','string','labor','sp','mat','matp','disc','total','paid'],excluded:new Set()};
+ui.rep={kind:'quittungen',kbStart:'',from:monthRange(0)[0],to:monthRange(0)[1],only:true,pay:'alle',cols:['date','no','cust','string','labor','sp','mat','matp','disc','total','paid'],excluded:new Set()};
 try{const c=JSON.parse(localStorage.getItem(KEY+'.repcols')||'null');if(Array.isArray(c)&&c.length)ui.rep.cols=c}catch(e){}
 function repRows(){const r=ui.rep;return S.orders.filter(o=>{const d=receiptDate(o);if(r.from&&d<r.from)return false;if(r.to&&d>r.to)return false;if(r.only&&!o.receiptAt)return false;if(r.pay==='bezahlt'&&!o.paid)return false;if(r.pay==='offen'&&o.paid)return false;return true}).sort((a,b)=>receiptDate(a).localeCompare(receiptDate(b))||a.no-b.no)}
 const repCols=()=>REPCOLS.filter(c=>ui.rep.cols.includes(c.k));
@@ -603,15 +688,15 @@ function vReports(){
   const r=ui.rep,rows=repRows(),cols=repCols(),sel=rows.filter(o=>!r.excluded.has(o.id));
   const sum=k=>sel.reduce((a,o)=>a+k(o),0);
   const tot=sum(total),disc=sum(o=>calc(o).disc),mat=sum(o=>calc(o).items);
-  const allOn=rows.length&&sel.length===rows.length;
-  return `<div class="bar"><h2>Reports</h2></div>
+  const allOn=rows.length&&sel.length===rows.length,kb=r.kind==='kassabuch';
+  return `<div class="bar"><h2>Reports</h2><div class="seg" role="group" aria-label="Report"><button class="${kb?'':'on'}" data-act="repKind" data-id="quittungen">Quittungen</button><button class="${kb?'on':''}" data-act="repKind" data-id="kassabuch">Kassabuch</button></div></div>
   <div class="panel">
     <div class="grid2"><label class="f"><span>Von</span><input id="rep-from" type="date" value="${esc(r.from)}" data-change="repFrom"></label><label class="f"><span>Bis</span><input id="rep-to" type="date" value="${esc(r.to)}" data-change="repTo"></label></div>
     <div class="chips">${Object.entries(PERIODS).map(([k,[l,f]])=>{const[a,b]=f();return `<button class="chip" data-act="repPeriod" data-id="${k}" aria-pressed="${a===r.from&&b===r.to}">${l}</button>`}).join('')}</div>
-    <div class="bar" style="justify-content:flex-start"><div class="chips">${[['alle','Alle Zahlungen'],['bezahlt','Nur bezahlt'],['offen','Nur offen']].map(([k,l])=>`<button class="chip" data-act="repPay" data-id="${k}" aria-pressed="${r.pay===k}">${l}</button>`).join('')}</div>
-      <label class="check"><input id="rep-only" type="checkbox" ${r.only?'checked':''} data-change="repOnly"> Nur erstellte Quittungen</label></div>
+    ${kb?'':`<div class="bar" style="justify-content:flex-start"><div class="chips">${[['alle','Alle Zahlungen'],['bezahlt','Nur bezahlt'],['offen','Nur offen']].map(([k,l])=>`<button class="chip" data-act="repPay" data-id="${k}" aria-pressed="${r.pay===k}">${l}</button>`).join('')}</div>
+      <label class="check"><input id="rep-only" type="checkbox" ${r.only?'checked':''} data-change="repOnly"> Nur erstellte Quittungen</label></div>`}
   </div>
-  <div class="kpis"><div class="kpi"><span>Positionen</span><b>${sel.length}<small class="hint" style="font-size:.9rem"> / ${rows.length}</small></b></div><div class="kpi"><span>Total</span><b>${money(tot)}</b></div><div class="kpi"><span>Davon Material</span><b>${money(mat)}</b></div><div class="kpi"><span>Gewährte Rabatte</span><b>${money(disc)}</b></div></div>
+  ${kb?vKassabuch():`<div class="kpis"><div class="kpi"><span>Positionen</span><b>${sel.length}<small class="hint" style="font-size:.9rem"> / ${rows.length}</small></b></div><div class="kpi"><span>Total</span><b>${money(tot)}</b></div><div class="kpi"><span>Davon Material</span><b>${money(mat)}</b></div><div class="kpi"><span>Gewährte Rabatte</span><b>${money(disc)}</b></div></div>
   <div class="panel"><div class="bar"><h3>Spalten</h3><span class="hint">Antippen zum Ein- und Ausblenden</span></div>
     <div class="chips" style="flex-wrap:wrap">${REPCOLS.map(c=>`<button class="chip" data-act="repCol" data-id="${c.k}" aria-pressed="${r.cols.includes(c.k)}">${c.l}</button>`).join('')}</div></div>
   <div class="panel">
@@ -624,7 +709,7 @@ function vReports(){
     <tbody>${rows.map(o=>{const on=!r.excluded.has(o.id);return `<tr class="${on?'':'off'}"><td><input type="checkbox" id="rr-${o.id}" data-id="${o.id}" data-change="repRow" ${on?'checked':''} aria-label="Quittung ${o.no} einbeziehen"></td>${cols.map(c=>c.m?`<td class="r num">${c.k==='disc'&&c.m(o)?'−'+money(-c.m(o)).slice(4):money(c.m(o)).slice(4)}</td>`:`<td class="${c.num?'r num':''}">${esc(c.v(o))}</td>`).join('')}</tr>`}).join('')}</tbody>
     <tfoot><tr><td></td>${cols.map((c,i)=>c.m?`<td class="r num">${c.k==='disc'&&sum(c.m)?'−'+money(-sum(c.m)).slice(4):money(sum(c.m)).slice(4)}</td>`:`<td>${i===0?'Total CHF':''}</td>`).join('')}</tr></tfoot></table></div>`
     :`<div class="empty">Keine Quittungen in diesem Zeitraum.${r.only?'<br>Tipp: «Nur erstellte Quittungen» ausschalten, um alle Aufträge zu sehen.':''}</div>`}
-  </div>`;
+  </div>`}`;
 }
 function repMatrix(){const cols=repCols(),rows=repSelected();
   const head=cols.map(c=>c.m?c.l+(c.l.includes('CHF')?'':' CHF'):c.l);
@@ -633,38 +718,42 @@ function repMatrix(){const cols=repCols(),rows=repSelected();
   return{cols,head,body,foot,rows}}
 function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`)){res();return}const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('load'));document.head.appendChild(s)})}
 const fileStamp=()=>`${ui.rep.from}_bis_${ui.rep.to}`;
+const fmtNum=v=>typeof v==='number'?v.toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(/’/g,"'"):v;
 async function saveFile(filename,data){try{await DL.save({filename,data});toast('Datei gespeichert')}catch(e){const c=e&&e.code;if(c==='declined')return;toast(c==='rate_limited'?'Bitte kurz warten und nochmals versuchen':'Download hier nicht möglich. Nutze «Tabelle kopieren».')}}
 async function exportXlsx(btn){btn.disabled=true;const old=btn.textContent;btn.textContent='Wird erstellt…';
   try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
-    const{cols,head,body,foot}=repMatrix();const st=S.settings;
-    const aoa=[[`Report Quittungen ${periodTxt()}`],[st.name||''],[`Erstellt am ${fmtD(today())}`],[],head,...body,foot];
+    const{cols,head,body,foot,summary,title,sheet,file}=reportData();const st=S.settings;
+    const aoa=[[`${title} ${periodTxt()}`],[[st.name,st.address].filter(Boolean).join(', ')],[`Erstellt am ${fmtD(today())}`],[],head,...body,foot,...(summary.length?[[],...summary.map(([l,v])=>[l,'','','',v])]:[])];
     const ws=XLSX.utils.aoa_to_sheet(aoa);const first=4,last=4+body.length+1;
     cols.forEach((c,ci)=>{if(!c.m)return;for(let r=first+1;r<=last;r++){const ref=XLSX.utils.encode_cell({r,c:ci});if(ws[ref]&&typeof ws[ref].v==='number')ws[ref].z='#,##0.00'}});
+    summary.forEach((x,i)=>{const ref=XLSX.utils.encode_cell({r:last+2+i,c:4});if(ws[ref])ws[ref].z='#,##0.00'});
     ws['!cols']=cols.map((c,i)=>({wch:Math.min(45,Math.max(c.l.length+2,...body.map(r=>String(r[i]).length+2)))}));
     ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:first,c:0},e:{r:first+body.length,c:cols.length-1}})};
-    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Quittungen');
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,sheet);
     const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
-    await saveFile(`BSS-Auftragsbuch_Report_${fileStamp()}.xlsx`,new Blob([buf]));
+    await saveFile(`BSS-Auftragsbuch_${file}_${fileStamp()}.xlsx`,new Blob([buf]));
   }catch(e){toast('Excel-Datei konnte nicht erstellt werden. Bitte nochmals versuchen.')}
   btn.disabled=false;btn.textContent=old}
 async function exportPdf(btn){btn.disabled=true;const old=btn.textContent;btn.textContent='Wird erstellt…';
   try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
-    const{cols,head,body,foot,rows}=repMatrix();const st=S.settings;
-    const fm=v=>typeof v==='number'?v.toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(/’/g,"'"):v;
-    const fmt=(r)=>r.map((v,i)=>cols[i].m?fm(v):(cols[i].k==='no'?String(v):String(v).replace(/−/g,'-')));
-    const doc=new window.jspdf.jsPDF({orientation:cols.length>7?'landscape':'portrait',unit:'mm',format:'a4'});
+    const{cols,head,body,foot,summary,title,file,countTxt,landscape}=reportData();const st=S.settings;
+    const clean=v=>String(v).replace(/[−–]/g,'-').replace(/·/g,'|');
+    const fmt=(r)=>r.map((v,i)=>cols[i].m?fmtNum(v):(cols[i].k==='no'?String(v):clean(v)));
+    const doc=new window.jspdf.jsPDF({orientation:landscape?'landscape':'portrait',unit:'mm',format:'a4'});
     const W=doc.internal.pageSize.getWidth();
-    doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('Report Quittungen',14,18);
-    doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(`Zeitraum ${fmtD(ui.rep.from)} - ${fmtD(ui.rep.to)}  ·  ${rows.length} Quittungen`.replace('·','|'),14,25);
-    if(st.name)doc.text(st.name,W-14,18,{align:'right'});doc.text(`Erstellt am ${fmtD(today())}`,W-14,25,{align:'right'});
+    doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(title,14,18);
+    doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(`Zeitraum ${fmtD(ui.rep.from)} - ${fmtD(ui.rep.to)}  |  ${countTxt}`,14,25);
+    if(st.name)doc.text(clean(st.name),W-14,18,{align:'right'});doc.text(`Erstellt am ${fmtD(today())}`,W-14,25,{align:'right'});
+    if(st.address){doc.setFontSize(8);doc.setTextColor(110);doc.text(clean(st.address.replace(/\n/g,', ')),W-14,30,{align:'right'});doc.setTextColor(0)}
     const align={};cols.forEach((c,i)=>{if(c.m||c.k==='no')align[i]={halign:'right'}});
-    doc.autoTable({startY:31,head:[head],body:body.map(fmt),foot:[fmt(foot)],styles:{fontSize:8.5,cellPadding:1.8},headStyles:{fillColor:[29,86,64],textColor:255},footStyles:{fillColor:[230,236,231],textColor:20,fontStyle:'bold'},columnStyles:align,showFoot:'lastPage',
+    doc.autoTable({startY:34,head:[head],body:body.map(fmt),foot:[fmt(foot)],styles:{fontSize:8.5,cellPadding:1.8},headStyles:{fillColor:[29,86,64],textColor:255},footStyles:{fillColor:[230,236,231],textColor:20,fontStyle:'bold'},columnStyles:align,showFoot:'lastPage',
       didDrawPage:d=>{doc.setFontSize(8);doc.setTextColor(120);doc.text(`Seite ${doc.internal.getNumberOfPages()}`,W-14,doc.internal.pageSize.getHeight()-8,{align:'right'});doc.setTextColor(0)}});
-    await saveFile(`BSS-Auftragsbuch_Report_${fileStamp()}.pdf`,doc.output('blob'));
+    if(summary.length){doc.autoTable({startY:doc.lastAutoTable.finalY+8,body:summary.map(([l,v])=>[clean(l),fmtNum(v)]),theme:'plain',styles:{fontSize:10,cellPadding:1.5},columnStyles:{0:{cellWidth:90},1:{halign:'right',cellWidth:35,fontStyle:'bold'}}})}
+    await saveFile(`BSS-Auftragsbuch_${file}_${fileStamp()}.pdf`,doc.output('blob'));
   }catch(e){toast('PDF konnte nicht erstellt werden. Bitte nochmals versuchen.')}
   btn.disabled=false;btn.textContent=old}
-function copyReport(){const{cols,head,body,foot}=repMatrix();const cell=(v,i)=>cols[i].m&&typeof v==='number'?v.toFixed(2):String(v).replace(/\t|\n/g,' ');
-  const tsv=[head,...body,foot].map(r=>r.map(cell).join('\t')).join('\n');
+function copyReport(){const{cols,head,body,foot,summary}=reportData();const cell=(v,i)=>cols[i]&&cols[i].m&&typeof v==='number'?v.toFixed(2):String(v).replace(/\t|\n/g,' ');
+  const tsv=[head,...body,foot].map(r=>r.map(cell).join('\t')).concat(summary.length?['',...summary.map(([l,v])=>l+'\t'+v.toFixed(2))]:[]).join('\n');
   openModal(`<div class="sheet-h"><h3>Tabelle kopieren</h3><button class="btn ghost sm" data-act="close">Schliessen</button></div><p class="hint">Kopieren und in Excel oder Numbers in Zelle A1 einfügen. Die Spalten werden automatisch getrennt.</p><textarea id="tsv" readonly style="min-height:180px;font-family:ui-monospace,monospace;font-size:.78rem;white-space:pre">${esc(tsv)}</textarea><div class="sheet-f"><button class="btn primary" data-act="copyTsv">Kopieren</button></div>`)}
 
 /* ---------- Schläger-Spezifikation & Tuning ---------- */
@@ -1040,6 +1129,10 @@ const A={
   go(v){ui.view=v;render();scrollTo(0,0)},
   repPeriod(k){const[a,b]=PERIODS[k][1]();ui.rep.from=a;ui.rep.to=b;ui.rep.excluded.clear();render()},
   repPay(k){ui.rep.pay=k;render()},
+  repKind(k){ui.rep.kind=k;render()},
+  newPurchase(){purchaseForm(null)},
+  editPurchase(id){purchaseForm(S.purchases.find(p=>p.id===id))},
+  delPurchase(id){const p=S.purchases.find(x=>x.id===id);confirmBox(`Einkauf E-${p.no} «${esc(p.text)}» endgültig löschen?`,'Löschen',()=>{S.purchases=S.purchases.filter(x=>x.id!==id);render();toast('Einkauf gelöscht')})},
   repCol(k){const c=ui.rep.cols;const i=c.indexOf(k);if(i>=0){if(c.length>1)c.splice(i,1)}else{ui.rep.cols=REPCOLS.map(x=>x.k).filter(x=>x===k||c.includes(x))}try{localStorage.setItem(KEY+'.repcols',JSON.stringify(ui.rep.cols))}catch(e){}render()},
   repXlsx(_,b){exportXlsx(b)},
   repPdf(_,b){exportPdf(b)},
@@ -1174,6 +1267,14 @@ const SUBMIT={
     if(error){loginErr=/invalid/i.test(error.message)?'E-Mail oder Passwort stimmt nicht.':'Anmeldung fehlgeschlagen: '+error.message;render();return}
     uidOwner=data.user.id;userEmail=data.user.email||'';startSync()},
   quickSave(){quickSave()},
+  savePurchase(f,btn){const d=fd(f),id=f.dataset.id;
+    if(!d.text){toast('Bitte eine Beschreibung eingeben');$('#pu-text').focus();return}
+    if(!(num(d.total)>0)){toast('Bitte den Totalbetrag eingeben');$('#pu-total').focus();return}
+    if(!d.date){toast('Bitte das Datum eingeben');return}
+    const v={date:d.date,supplier:d.supplier,text:d.text,cat:d.cat,ref:d.ref,notes:d.notes,total:r2(num(d.total)),rate:num(d.rate)};
+    let p;if(id){p=S.purchases.find(x=>x.id===id);Object.assign(p,v)}else{p={id:uid(),no:nextPurchaseNo(),...v};S.purchases.push(p)}
+    ui.pyear=+p.date.slice(0,4);closeModal();render();toast(id?'Einkauf gespeichert':`Einkauf E-${p.no} erfasst`);
+    if(!id&&btn&&btn.name==='more')purchaseForm({date:p.date,supplier:p.supplier,text:'',cat:p.cat,total:'',rate:p.rate,ref:'',notes:''},true)},
   saveMaterial(f){const d=fd(f),id=f.dataset.id;const v={name:d.name,cat:d.cat,price:num(d.price)};
     if(id)Object.assign(S.materials.find(m=>m.id===id),v);else S.materials.push({id:uid(),...v});closeModal();render();toast('Material gespeichert')},
   saveString(f){const d=fd(f),id=f.dataset.id;const v={name:d.name,gauge:d.gauge,type:d.type,price:num(d.price)};
@@ -1195,15 +1296,19 @@ const CHANGE={
   repFrom(el){ui.rep.from=el.value;ui.rep.excluded.clear();render()},
   repTo(el){ui.rep.to=el.value;ui.rep.excluded.clear();render()},
   repOnly(el){ui.rep.only=el.checked;render()},
+  kbStart(el){ui.rep.kbStart=el.value;render()},
+  pYear(el){ui.pyear=+el.value;render()},
+  pvat(){$('#pu-vat').innerHTML=vatHtml($('#pu-total').value,$('#pu-rate').value)},
   repRow(el){if(el.checked)ui.rep.excluded.delete(el.dataset.id);else ui.rep.excluded.add(el.dataset.id);render()},
   repAll(el){if(el.checked)ui.rep.excluded.clear();else repRows().forEach(o=>ui.rep.excluded.add(o.id));render()},
   restoreFile(el){const file=el.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>{$('#rs').value=rd.result};rd.readAsText(file)}
 };
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b){if(b.tagName==='A'&&b.href)return;e.preventDefault();A[b.dataset.act]?.(b.dataset.id,b);return}if(e.target.id==='modal')closeModal()});
-document.addEventListener('submit',e=>{e.preventDefault();const f=e.target;SUBMIT[f.dataset.submit]?.(f)});
+document.addEventListener('submit',e=>{e.preventDefault();const f=e.target;SUBMIT[f.dataset.submit]?.(f,e.submitter)});
 document.addEventListener('change',e=>{if(e.target.hasAttribute&&e.target.hasAttribute('data-fmt1'))e.target.value=fmt1(e.target.value);const k=e.target.dataset.change;if(k)CHANGE[k](e.target);if(e.target.id==='year'){ui.year=+e.target.value;render()}});
 document.addEventListener('input',e=>{const t=e.target,k=t.dataset.input;
-  if(k==='q'||k==='cq'){ui[k]=t.value;const pos=t.selectionStart;render();const n=$('#'+k);n.focus();n.setSelectionRange(pos,pos);return}
+  if(k==='pvat'){CHANGE.pvat();return}
+  if(k==='q'||k==='cq'||k==='pq'){ui[k]=t.value;const pos=t.selectionStart;render();const n=$('#'+k);n.focus();n.setSelectionRange(pos,pos);return}
   if(k==='qsearch'){Q.name=t.value;$('#q-sugg').innerHTML=qSuggest(t.value);return}
   if(k==='disc'){draft.dVal=t.value;$('#ck-sum').innerHTML=sumHtml();document.querySelectorAll('[data-act="dQuick"]').forEach(b=>b.setAttribute('aria-pressed',draft.dType==='pct'&&num(t.value)===+b.dataset.id));return}
   if(k==='priceTouch'){priceTouched=true;updateOrderTotal();return}

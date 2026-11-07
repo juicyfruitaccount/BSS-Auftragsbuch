@@ -92,6 +92,9 @@ export const MODELS = [
   { id: 'md2', brand: 'Wilson', model: 'Blade 98 v9', pattern: '18x20', head: '98' },
   { id: 'md3', brand: 'Head', model: 'Speed MP', pattern: '16x19', head: '100' },
 ];
+export const purchase = (over = {}) => ({
+  id: 'p1', no: 1, date: '2026-11-03', supplier: 'Tennis-Point', text: 'Babolat RPM Blast 200 m', cat: 'Saiten', ref: '', notes: '', total: 162.15, rate: 8.1, ...over,
+});
 export const racket = (over = {}) => ({
   id: 'r1', modelId: 'md2', brand: 'Wilson', model: 'Blade 98 v9', pattern: '18x20', head: '98',
   specs: { measured: 'unbesaitet', weight: '305.0', balance: '320.0', sw: '285.0', grip: 'L2 (4 1/4)', ra: '62' },
@@ -108,10 +111,10 @@ export const order = (over = {}) => ({
   items: [], discount: null, ...over,
 });
 /** Datenbank-Zeilen aus einfachen Listen bauen */
-export function dbRows({ customers = [], orders = [], strings = STRINGS, materials = MATERIALS, models = MODELS, settings = {}, nextNo } = {}) {
+export function dbRows({ customers = [], orders = [], strings = STRINGS, materials = MATERIALS, models = MODELS, purchases = [], settings = {}, nextNo } = {}) {
   const rows = [];
   const put = (col, list) => list.forEach(x => rows.push({ col, id: x.id, data: x }));
-  put('customers', customers); put('orders', orders); put('strings', strings); put('materials', materials); put('models', models);
+  put('customers', customers); put('orders', orders); put('strings', strings); put('materials', materials); put('models', models); put('purchases', purchases);
   rows.push({ col: 'meta', id: 'app', data: { settings: { name: 'BSS Test', address: 'Teststrasse 1\n5442 Fislisbach', labor: 25, msg: 'Hallo {vorname}, dein {schlaeger} ist fertig. Betrag: {betrag}', ...settings }, nextNo: nextNo ?? (orders.reduce((a, o) => Math.max(a, o.no), 0) + 1) } });
   return rows;
 }

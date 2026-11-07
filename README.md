@@ -19,6 +19,7 @@ oder verändert.
 | `tests/auftraege.test.mjs` | Auftrag in vier Schritten, Status, Kunde informieren, Abrechnung, Quittung, Löschen |
 | `tests/schnellauftrag.test.mjs` | Schnellauftrag unterwegs und Nacherfassen am Computer |
 | `tests/stammdaten.test.mjs` | Schlägermodelle, Schläger der Kunden, Spezifikation, Tuning, Saiten, Material, Einstellungen, Sicherung |
+| `tests/einkauf-kassabuch.test.mjs` | Materialeinkauf mit MWST-Berechnung und Kassabuch |
 | `tests/tuning-reports.test.mjs` | Tuning-Report (Werte, WhatsApp, Drucken) sowie Reports und Umsatz |
 | `tests/sync.test.mjs` | Anmeldung, Laden und Speichern, Verbindungsfehler, Änderungen von einem anderen Gerät |
 
