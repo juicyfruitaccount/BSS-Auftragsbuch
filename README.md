@@ -21,6 +21,7 @@ oder verändert.
 | `tests/stammdaten.test.mjs` | Schlägermodelle, Schläger der Kunden, Spezifikation, Tuning, Saiten, Material, Einstellungen, Sicherung |
 | `tests/einkauf-kassabuch.test.mjs` | Materialeinkauf mit MWST-Berechnung und Kassabuch |
 | `tests/tuning-reports.test.mjs` | Tuning-Report (Werte, WhatsApp, Drucken) sowie Reports und Umsatz |
+| `tests/handy.test.mjs` | Handy-Ansicht: Menü verdeckt keine Knöpfe (mit simulierter iPhone-Statusleiste) |
 | `tests/sync.test.mjs` | Anmeldung, Laden und Speichern, Verbindungsfehler, Änderungen von einem anderen Gerät |
 
 Die Tests laufen bei jeder Änderung automatisch auf GitHub (Reiter «Actions»).

@@ -17,6 +17,8 @@
 <style>
 html{-webkit-text-size-adjust:100%}
 body{margin:0}
+:root{--sat:env(safe-area-inset-top,0px)}
+html{padding-top:var(--sat)}
 img{max-width:100%}
 .login{max-width:380px;margin:40px auto;display:grid;gap:14px}
 
@@ -43,14 +45,14 @@ img{max-width:100%}
 
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--head)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:var(--sat);z-index:10;background:var(--head)}
 h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;text-wrap:balance;margin:0;line-height:1.1}
 h2{font-size:1.7rem} h3{font-size:1.25rem}
 .num{font-variant-numeric:tabular-nums}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--court);outline-offset:2px}
 
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--head);color:var(--head-ink)}
+header.top{position:sticky;top:var(--sat);z-index:5;background:var(--head);color:var(--head-ink)}
 .top-in{max-width:960px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px 0}
 .brand{display:flex;align-items:center;gap:10px}
 .brand h1{font-size:1.5rem}
@@ -204,6 +206,9 @@ td.wrap{white-space:normal;min-width:120px}
 .kpi b{white-space:nowrap}
 @media (max-width:480px){.kpi b{font-size:1.3rem}}
 table.kb tr.kb-start td{color:var(--muted);font-style:italic}
+.seg.rep-switch{height:auto}
+.rep-switch button{padding:0 18px;min-height:44px}
+@media (max-width:600px){.rep-switch{flex:1 1 100%;display:flex}.rep-switch button{flex:1}header.top .top-in{padding-block:6px 0}nav.tabs{margin-top:4px}nav.tabs button{padding:8px 10px 10px}}
 .ck-lines{display:grid;border-top:1px solid var(--line)}
 .ck-line{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);min-width:0}
 .ck-line .grow{flex:1;min-width:0}
@@ -689,7 +694,7 @@ function vReports(){
   const sum=k=>sel.reduce((a,o)=>a+k(o),0);
   const tot=sum(total),disc=sum(o=>calc(o).disc),mat=sum(o=>calc(o).items);
   const allOn=rows.length&&sel.length===rows.length,kb=r.kind==='kassabuch';
-  return `<div class="bar"><h2>Reports</h2><div class="seg" role="group" aria-label="Report"><button class="${kb?'':'on'}" data-act="repKind" data-id="quittungen">Quittungen</button><button class="${kb?'on':''}" data-act="repKind" data-id="kassabuch">Kassabuch</button></div></div>
+  return `<div class="bar"><h2>Reports</h2><div class="seg rep-switch" role="group" aria-label="Report"><button class="${kb?'':'on'}" data-act="repKind" data-id="quittungen">Quittungen</button><button class="${kb?'on':''}" data-act="repKind" data-id="kassabuch">Kassabuch</button></div></div>
   <div class="panel">
     <div class="grid2"><label class="f"><span>Von</span><input id="rep-from" type="date" value="${esc(r.from)}" data-change="repFrom"></label><label class="f"><span>Bis</span><input id="rep-to" type="date" value="${esc(r.to)}" data-change="repTo"></label></div>
     <div class="chips">${Object.entries(PERIODS).map(([k,[l,f]])=>{const[a,b]=f();return `<button class="chip" data-act="repPeriod" data-id="${k}" aria-pressed="${a===r.from&&b===r.to}">${l}</button>`}).join('')}</div>
