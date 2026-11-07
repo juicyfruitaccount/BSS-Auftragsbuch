@@ -813,7 +813,7 @@ function wizNext(){const v=W.vals,s=W.step;
 function wizSave(){const v=W.vals;let rdata=null;
   if(v.r_sel!==''){const res=parseRacketVals(v);if(res.err){toast(res.err);W.step=2;drawWiz();return}rdata=res.data}
   let c;if(v.c_mode==='new'){c={id:uid(),name:v.c_name.trim(),phone:v.c_phone||'',email:v.c_email||'',address:v.c_address||'',notes:v.c_notes||'',rackets:[]};S.customers.push(c)}else c=cust(v.c_id);
-  let r=null;if(rdata){if(v.r_sel==='__new'){r={id:uid(),...rdata,pref:{main:'',cross:'',tMain:'',tCross:'',prestretch:'0%',knots:'4',notes:''}};c.rackets.push(r)}else{r=rack(c,v.r_sel);Object.assign(r,rdata)}}
+  let r=null;if(rdata){if(v.r_sel==='__new'){r={id:uid(),...rdata,pref:{main:'',cross:'',tMain:'',tCross:'',prestretch:'0%',knots:'4',notes:''}};c.rackets.push(r)}else{r=rack(c,v.r_sel);Object.assign(r,rdata,{incomplete:false})}}
   const main=v.o_main.trim(),cross=(v.o_cross||'').trim();
   const data={customerId:c.id,racketId:r?r.id:'',main,cross:cross&&cross!==main?cross:'',tMain:v.o_tMain||'',tCross:v.o_tCross||v.o_tMain||'',prestretch:v.o_prestretch,knots:v.o_knots,receivedAt:v.o_receivedAt||today(),dueAt:v.o_dueAt||'',labor:num(v.o_labor),stringPrice:num(v.o_stringPrice),paid:!!v.o_paid,notes:v.o_notes||''};
   const o={id:uid(),no:nextNo(),status:'angenommen',...data,items:[],discount:null,paidAt:data.paid?today():''};if(r&&r.tuning&&r.tuning.wanted)o.tuning=snapTuning(r);S.orders.push(o);
@@ -877,6 +877,7 @@ function quickSave(){qRead();if(!Q.cid&&!Q.newMode){toast('Bitte einen Kunden w�
   const notes=[Q.og&&!og?'Neues Overgrip gewünscht':'',Q.notes].filter(Boolean).join(' · ');
   const o={id:uid(),no:nextNo(),status:'angenommen',customerId:c.id,racketId:r?r.id:'',racketNote:r?'':Q.rnote.trim(),main,cross:cross&&cross!==main?cross:'',tMain:Q.tMain,tCross:Q.tCross||Q.tMain,prestretch:r&&r.pref?r.pref.prestretch||'0%':'0%',knots:r&&r.pref?String(r.pref.knots||'4'):'4',
     receivedAt:today(),dueAt:Q.due,labor:num(S.settings.labor),stringPrice:sp==null?0:sp,paid:false,paidAt:'',notes,items:og?[{materialId:og.id,name:og.name,price:num(og.price),qty:1}]:[],discount:null,quick:true};
+  if(r&&r.tuning&&r.tuning.wanted)o.tuning=snapTuning(r);
   S.orders.push(o);if(r)r.pref={...r.pref,main:o.main,cross:o.cross,tMain:o.tMain,tCross:o.tCross};
   if(!S.strings.some(x=>x.name.toLowerCase()===main.toLowerCase()))S.strings.push({id:uid(),name:main,gauge:'',type:'Poly',price:0});
   Q=null;closeModal();ui.view='auftraege';ui.filter='aktiv';render();toast(`Schnellauftrag #${o.no} gespeichert`)}
@@ -1112,7 +1113,7 @@ const A={
     <table><tbody>${lines.map(([t,p])=>`<tr><td>${esc(t)}</td><td class="r num">${money(p)}</td></tr>`).join('')}${extra.map(([t,p],i)=>`<tr><td style="${i?'':'font-weight:600'}">${esc(t)}</td><td class="r num">${p<0?'−':''}${money(Math.abs(p))}</td></tr>`).join('')}<tr class="total"><td>Total</td><td class="r num">${money(total(o))}</td></tr></tbody></table>
     <div>${o.paid?`Betrag erhalten am ${fmtD(o.paidAt||today())}. Besten Dank!`:'<b style="color:var(--danger)">Zahlung offen</b>'}</div></div>
     <textarea id="rcpt" hidden>${esc(plain)}</textarea>
-    <p class="hint">Im Prototyp kannst du die Quittung als Text kopieren oder ein Bildschirmfoto machen. Ein PDF-Export folgt in der fertigen Version.</p>
+    <p class="hint">Mit «Text kopieren» kannst du die Quittung zum Beispiel in WhatsApp oder eine E-Mail einfügen.</p>
     <div class="sheet-f"><button class="btn left" data-act="checkout" data-id="${o.id}">← Abrechnung ändern</button>${o.paid?'':`<button class="btn" data-act="markPaidR" data-id="${o.id}">Als bezahlt markieren</button>`}<button class="btn primary" data-act="copyRcpt">Text kopieren</button></div>`)},
   checkout(id){const o=S.orders.find(x=>x.id===id);draft={id,items:(o.items||[]).map(x=>({...x})),dType:(o.discount&&o.discount.type)||'pct',dVal:o.discount&&num(o.discount.value)?String(o.discount.value):''};drawCheckout()},
   addItem(){const sel=$('#ck-mat'),q=Math.max(1,Math.round(num($('#ck-qty').value))||1),m=S.materials.find(x=>x.id===sel.value);if(!m){toast('Bitte ein Material wählen');return}

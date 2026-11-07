@@ -1,0 +1,15 @@
+{
+  "name": "bss-auftragsbuch",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BSS-Auftragsbuch – Auftrags- und Kundenverwaltung für den Besaitungsservice",
+  "scripts": {
+    "test": "node --test --test-reporter=spec --test-timeout=30000 \"tests/*.test.mjs\""
+  },
+  "devDependencies": {
+    "playwright": "1.56.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
